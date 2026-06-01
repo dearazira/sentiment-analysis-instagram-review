@@ -13,6 +13,8 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import re
 import os
+from collections import Counter
+from wordcloud import WordCloud
 
 from sklearn.model_selection import train_test_split, RandomizedSearchCV
 from sklearn.feature_extraction.text import TfidfVectorizer
@@ -81,7 +83,183 @@ df = df[df['text_clean'].str.len() > 10]
 print(f"\n✅ Data siap: {len(df)} baris")
 
 # ============================================
-# 2. SPLIT DATA
+# 💾 SIMPAN DATA 10000 YANG DIGUNAKAN KE CSV
+# ============================================
+
+print("\n" + "="*80)
+print("💾 MENYIMPAN DATA 10000 YANG DIGUNAKAN")
+print("="*80)
+
+# Buat dataframe untuk disimpan
+data_used = pd.DataFrame({
+    'original_text': df['text'],
+    'cleaned_text': df['text_clean'],
+    'rating': df['rating'],
+    'sentiment': df['sentiment'],
+    'text_length': df['text_clean'].str.len()
+})
+
+# ============================================
+# DEFINE OUTPUT PATH
+# ============================================
+
+output_path = r"C:\Users\ASUS\OneDrive\Dokumen\DMBI UAS\output"
+os.makedirs(output_path, exist_ok=True)
+
+# Simpan ke CSV
+data_used_path = os.path.join(output_path, "data_10000_yang_digunakan.csv")
+data_used.to_csv(data_used_path, index=False, encoding='utf-8-sig')
+
+print(f"✅ Data berhasil disimpan di: {data_used_path}")
+print(f"   Total data: {len(data_used)} baris")
+print(f"   Kolom: {', '.join(data_used.columns)}")
+
+# Tampilkan preview 10 data pertama
+print("\n📋 PREVIEW 10 DATA PERTAMA:")
+print("="*100)
+print(data_used.head(10).to_string(index=False))
+
+# Tampilkan informasi statistik data
+print("\n📊 STATISTIK DATA:")
+print("="*100)
+print(f"Total data        : {len(data_used):,} baris")
+print(f"Rating range      : {data_used['rating'].min()} - {data_used['rating'].max()}")
+print(f"Sentimen Positive : {(data_used['sentiment'] == 'positive').sum():,} ({(data_used['sentiment'] == 'positive').sum()/len(data_used)*100:.2f}%)")
+print(f"Sentimen Negative : {(data_used['sentiment'] == 'negative').sum():,} ({(data_used['sentiment'] == 'negative').sum()/len(data_used)*100:.2f}%)")
+print(f"Panjang teks min  : {data_used['text_length'].min()} karakter")
+print(f"Panjang teks max  : {data_used['text_length'].max()} karakter")
+print(f"Panjang teks avg  : {data_used['text_length'].mean():.2f} karakter")
+
+print("\n✅ DATA 10000 BERHASIL DISIMPAN!")
+print("="*80)
+
+# ============================================
+# 2. EXPLORATORY DATA ANALYSIS (EDA)
+# ============================================
+
+print("\n" + "="*80)
+print("📊 EXPLORATORY DATA ANALYSIS (EDA)")
+print("="*80)
+
+# 2.1 Distribusi Sentimen
+print("\n2.1 Distribusi Sentimen:")
+
+sentiment_counts = df['sentiment'].value_counts()
+sentiment_percent = df['sentiment'].value_counts(normalize=True) * 100
+
+dist_df = pd.DataFrame({
+    'Jumlah': sentiment_counts,
+    'Persentase (%)': sentiment_percent.round(2)
+})
+print("\nTabel Distribusi Sentimen:")
+print(dist_df)
+
+fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 5))
+colors_pie = ['#90EE90', '#FFB6C1']
+
+ax1.pie(sentiment_counts, labels=sentiment_counts.index, autopct='%1.1f%%', 
+        colors=colors_pie, startangle=90, explode=(0.05, 0.05))
+ax1.set_title('Distribusi Sentimen', fontsize=14, fontweight='bold')
+
+sns.barplot(x=sentiment_counts.index, y=sentiment_counts.values, palette=colors_pie, ax=ax2)
+ax2.set_title('Jumlah Data per Sentimen', fontsize=14, fontweight='bold')
+ax2.set_xlabel('Sentimen')
+ax2.set_ylabel('Jumlah')
+
+for i, v in enumerate(sentiment_counts.values):
+    ax2.text(i, v + 50, str(v), ha='center', fontweight='bold')
+
+plt.tight_layout()
+plt.savefig(f"{output_path}\\distribusi_sentimen.png", dpi=150, bbox_inches='tight')
+plt.show()
+
+# 2.2 Word Cloud
+print("\n2.2 Word Cloud:")
+
+positive_text = ' '.join(df[df['sentiment'] == 'positive']['text_clean'].tolist())
+negative_text = ' '.join(df[df['sentiment'] == 'negative']['text_clean'].tolist())
+
+fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(20, 8))
+
+wordcloud_pos = WordCloud(width=800, height=400, background_color='white', 
+                          colormap='Greens', max_words=100, contour_width=1,
+                          contour_color='darkgreen').generate(positive_text)
+ax1.imshow(wordcloud_pos, interpolation='bilinear')
+ax1.axis('off')
+ax1.set_title('Positive Sentiment Word Cloud', fontsize=16, fontweight='bold')
+
+wordcloud_neg = WordCloud(width=800, height=400, background_color='white',
+                          colormap='Reds', max_words=100, contour_width=1,
+                          contour_color='darkred').generate(negative_text)
+ax2.imshow(wordcloud_neg, interpolation='bilinear')
+ax2.axis('off')
+ax2.set_title('Negative Sentiment Word Cloud', fontsize=16, fontweight='bold')
+
+plt.tight_layout()
+plt.savefig(f"{output_path}\\wordcloud.png", dpi=150, bbox_inches='tight')
+plt.show()
+
+# 2.3 Top Frequent Words
+print("\n2.3 Top Frequent Words:")
+
+def get_top_words(text_series, n=15):
+    all_words = ' '.join(text_series.tolist()).split()
+    word_counts = Counter(all_words)
+    return word_counts.most_common(n)
+
+top_positive = get_top_words(df[df['sentiment'] == 'positive']['text_clean'], 15)
+top_negative = get_top_words(df[df['sentiment'] == 'negative']['text_clean'], 15)
+
+print("\nTop 15 Kata pada Sentimen POSITIVE:")
+for word, count in top_positive:
+    print(f"   {word}: {count}")
+
+print("\nTop 15 Kata pada Sentimen NEGATIVE:")
+for word, count in top_negative:
+    print(f"   {word}: {count}")
+
+fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 8))
+
+pos_words, pos_counts = zip(*top_positive)
+ax1.barh(pos_words, pos_counts, color='green')
+ax1.set_title('Top 15 Kata - Positive Sentiment', fontsize=14, fontweight='bold')
+ax1.set_xlabel('Frekuensi')
+ax1.invert_yaxis()
+
+neg_words, neg_counts = zip(*top_negative)
+ax2.barh(neg_words, neg_counts, color='red')
+ax2.set_title('Top 15 Kata - Negative Sentiment', fontsize=14, fontweight='bold')
+ax2.set_xlabel('Frekuensi')
+ax2.invert_yaxis()
+
+plt.tight_layout()
+plt.savefig(f"{output_path}\\top_frequent_words.png", dpi=150, bbox_inches='tight')
+plt.show()
+
+# 2.4 Panjang Teks Review
+print("\n2.4 Analisis Panjang Teks:")
+
+df['text_length'] = df['text_clean'].str.len()
+
+print(f"\nStatistik Panjang Teks:")
+print(f"   Rata-rata: {df['text_length'].mean():.2f} karakter")
+print(f"   Median: {df['text_length'].median():.2f} karakter")
+print(f"   Min: {df['text_length'].min()} karakter")
+print(f"   Max: {df['text_length'].max()} karakter")
+
+fig, ax = plt.subplots(figsize=(10, 6))
+sns.boxplot(x='sentiment', y='text_length', data=df, palette=colors_pie)
+ax.set_title('Distribusi Panjang Teks per Sentimen', fontsize=14, fontweight='bold')
+ax.set_xlabel('Sentimen')
+ax.set_ylabel('Panjang Teks (karakter)')
+plt.tight_layout()
+plt.savefig(f"{output_path}\\text_length_distribution.png", dpi=150, bbox_inches='tight')
+plt.show()
+
+print("\n✅ EDA SELESAI!")
+
+# ============================================
+# 3. SPLIT DATA
 # ============================================
 
 X = df['text_clean'].tolist()
@@ -94,7 +272,7 @@ X_train, X_test, y_train, y_test = train_test_split(
 print(f"\n📊 Split: Train={len(X_train)}, Test={len(X_test)}")
 
 # ============================================
-# 3. TF-IDF
+# 4. TF-IDF
 # ============================================
 
 print("\n🔄 TF-IDF Vectorization...")
@@ -104,7 +282,7 @@ X_test_tfidf = tfidf.transform(X_test)
 print(f"✅ Fitur: {X_train_tfidf.shape[1]}")
 
 # ============================================
-# 4. ENCODE LABEL
+# 5. ENCODE LABEL
 # ============================================
 
 le = LabelEncoder()
@@ -112,15 +290,6 @@ y_train_enc = le.fit_transform(y_train)
 y_test_enc = le.transform(y_test)
 class_names = le.classes_
 print(f"\n📋 Label (Binary): {class_names}")
-
-# ============================================
-# DEFINE OUTPUT PATH (SEBELUM DIGUNAKAN)
-# ============================================
-
-output_path = r"C:\Users\ASUS\OneDrive\Dokumen\DMBI UAS\output"
-
-# Buat folder output jika belum ada
-os.makedirs(output_path, exist_ok=True)
 
 # ============================================
 # FUNGSI THRESHOLD TUNING
@@ -151,30 +320,23 @@ def threshold_tuning_binary(model, X_test, y_test_enc):
 # ============================================
 
 def evaluate_binary_with_overfit(y_train, y_test, y_pred_train, y_pred_test, y_prob, model_name, scenario):
-    """Evaluasi lengkap dengan cek overfitting"""
-    
-    # Metrik training
     train_acc = accuracy_score(y_train, y_pred_train)
     train_precision = precision_score(y_train, y_pred_train)
     train_recall = recall_score(y_train, y_pred_train)
     train_f1 = f1_score(y_train, y_pred_train)
     
-    # Metrik testing
     test_acc = accuracy_score(y_test, y_pred_test)
     test_precision = precision_score(y_test, y_pred_test)
     test_recall = recall_score(y_test, y_pred_test)
     test_f1 = f1_score(y_test, y_pred_test)
     
-    # Confusion matrix
     tn, fp, fn, tp = confusion_matrix(y_test, y_pred_test).ravel()
     sensitivity = tp / (tp + fn) if (tp + fn) > 0 else 0
     specificity = tn / (tn + fp) if (tn + fp) > 0 else 0
     
-    # Overfitting gap
     gap_acc = train_acc - test_acc
     gap_f1 = train_f1 - test_f1
     
-    # Status overfitting
     if gap_acc < 0.03:
         overfit_status = "✅ AMAN (gap < 3%)"
     elif gap_acc < 0.05:
@@ -184,7 +346,6 @@ def evaluate_binary_with_overfit(y_train, y_test, y_pred_train, y_pred_test, y_p
     else:
         overfit_status = "❌ OVERFITTING (gap > 8%)"
     
-    # ROC AUC
     roc_auc = None
     fpr, tpr = None, None
     if y_prob is not None:
@@ -238,21 +399,18 @@ for name, model in models.items():
     print(f"\nTraining {name}...")
     model.fit(X_train_tfidf, y_train)
     
-    # Prediksi train
     y_pred_train = model.predict(X_train_tfidf)
     if isinstance(y_pred_train[0], str):
         y_pred_train_enc = le.transform(y_pred_train)
     else:
         y_pred_train_enc = y_pred_train
     
-    # Prediksi test
     y_pred_test = model.predict(X_test_tfidf)
     if isinstance(y_pred_test[0], str):
         y_pred_test_enc = le.transform(y_pred_test)
     else:
         y_pred_test_enc = y_pred_test
     
-    # Probabilitas
     y_prob = None
     if hasattr(model, 'predict_proba'):
         y_prob = model.predict_proba(X_test_tfidf)[:, 1]
@@ -279,7 +437,6 @@ results_handling = []
 for name, model in models.items():
     print(f"\n{name} - Threshold Tuning...")
     
-    # Re-inisialisasi model
     if name == 'Logistic Regression':
         model_clone = LogisticRegression(max_iter=1000, random_state=42)
     elif name == 'Naive Bayes':
@@ -293,7 +450,6 @@ for name, model in models.items():
     
     model_clone.fit(X_train_tfidf, y_train)
     
-    # Prediksi train (baseline dulu untuk cek overfit)
     y_pred_train = model_clone.predict(X_train_tfidf)
     if isinstance(y_pred_train[0], str):
         y_pred_train_enc = le.transform(y_pred_train)
@@ -366,7 +522,6 @@ for name in models.keys():
     print(f"   Best params: {random_search.best_params_}")
     best_model = random_search.best_estimator_
     
-    # Prediksi train
     y_pred_train = best_model.predict(X_train_tfidf)
     if isinstance(y_pred_train[0], str):
         y_pred_train_enc = le.transform(y_pred_train)
@@ -426,21 +581,15 @@ print("\n" + "="*80)
 print("📈 MEMBUAT ROC CURVE UNTUK SEMUA MODEL DAN SKENARIO")
 print("="*80)
 
-# Setup warna dan style untuk ROC Curve
 colors = ['blue', 'green', 'red', 'orange', 'purple', 'brown', 'pink', 'gray', 'olive', 'cyan', 
           'magenta', 'navy', 'teal', 'coral', 'goldenrod']
 line_styles = ['-', '--', '-.', ':']
 
-# Gabungkan semua hasil
 all_results = results_baseline + results_handling + results_tuning
 
-# 1. ROC CURVE PER SKENARIO (Semua model dalam satu plot)
-scenarios = ['Baseline', 'Threshold (th=', 'Threshold+Tuning (th=']
-
+# 1. ROC CURVE PER SKENARIO
 for scenario in ['Baseline', 'Threshold (th=', 'Threshold+Tuning (th=']:
     plt.figure(figsize=(12, 8))
-    
-    # Filter hasil untuk skenario ini
     scenario_results = [r for r in all_results if r['Skenario'].startswith(scenario)]
     
     for idx, result in enumerate(scenario_results):
@@ -451,9 +600,7 @@ for scenario in ['Baseline', 'Threshold (th=', 'Threshold+Tuning (th=']:
                     color=color, linestyle=linestyle, lw=2,
                     label=f"{result['Model']} (AUC = {result['ROC_AUC']:.3f})")
     
-    # Garis diagonal (random classifier)
     plt.plot([0, 1], [0, 1], 'k--', lw=1.5, label='Random Classifier (AUC = 0.5)')
-    
     plt.xlim([0.0, 1.0])
     plt.ylim([0.0, 1.05])
     plt.xlabel('False Positive Rate (1 - Specificity)', fontsize=12)
@@ -463,32 +610,26 @@ for scenario in ['Baseline', 'Threshold (th=', 'Threshold+Tuning (th=']:
     plt.grid(True, alpha=0.3)
     plt.tight_layout()
     
-    # Simpan gambar
     scenario_name = scenario.replace(' ', '_').replace('(', '').replace(')', '').replace('=', '')
     plt.savefig(f"{output_path}\\roc_curve_{scenario_name}.png", dpi=150, bbox_inches='tight')
     plt.show()
     print(f"✅ ROC Curve untuk {scenario} disimpan")
 
-# 2. ROC CURVE PER MODEL (Semua skenario dalam satu plot)
+# 2. ROC CURVE PER MODEL
 for model_name in models.keys():
     plt.figure(figsize=(12, 8))
-    
-    # Filter hasil untuk model ini
     model_results = [r for r in all_results if r['Model'] == model_name]
     
     for idx, result in enumerate(model_results):
         if result['y_prob'] is not None and result['ROC_AUC'] is not None:
             color = colors[idx % len(colors)]
             linestyle = line_styles[idx % len(line_styles)]
-            # Persingkat nama skenario untuk legend
             scenario_short = result['Skenario'].replace('Threshold (th=', 'Th=').replace('Threshold+Tuning (th=', 'Tuned Th=').replace(')', '')
             plt.plot(result['fpr'], result['tpr'], 
                     color=color, linestyle=linestyle, lw=2,
                     label=f"{scenario_short} (AUC = {result['ROC_AUC']:.3f})")
     
-    # Garis diagonal
     plt.plot([0, 1], [0, 1], 'k--', lw=1.5, label='Random Classifier (AUC = 0.5)')
-    
     plt.xlim([0.0, 1.0])
     plt.ylim([0.0, 1.05])
     plt.xlabel('False Positive Rate (1 - Specificity)', fontsize=12)
@@ -498,73 +639,15 @@ for model_name in models.keys():
     plt.grid(True, alpha=0.3)
     plt.tight_layout()
     
-    # Simpan gambar
     model_name_clean = model_name.replace(' ', '_')
     plt.savefig(f"{output_path}\\roc_curve_{model_name_clean}.png", dpi=150, bbox_inches='tight')
     plt.show()
     print(f"✅ ROC Curve untuk {model_name} disimpan")
 
-# 3. ROC CURVE GABUNGAN SEMUA MODEL DAN SKENARIO TERBAIK
-plt.figure(figsize=(14, 10))
-
-# Ambil model terbaik dari setiap skenario
-best_by_scenario = {}
-for scenario in ['Baseline', 'Threshold (th=', 'Threshold+Tuning (th=']:
-    scenario_results = [r for r in all_results if r['Skenario'].startswith(scenario)]
-    if scenario_results:
-        best = max(scenario_results, key=lambda x: x['ROC_AUC'] if x['ROC_AUC'] is not None else 0)
-        best_by_scenario[scenario] = best
-
-for idx, (scenario, result) in enumerate(best_by_scenario.items()):
-    if result['y_prob'] is not None and result['ROC_AUC'] is not None:
-        color = colors[idx % len(colors)]
-        scenario_short = scenario.split('(')[0]
-        plt.plot(result['fpr'], result['tpr'], 
-                color=color, lw=2.5,
-                label=f"{result['Model']} - {scenario_short} (AUC = {result['ROC_AUC']:.3f})")
-
-plt.plot([0, 1], [0, 1], 'k--', lw=1.5, label='Random Classifier (AUC = 0.5)')
-plt.xlim([0.0, 1.0])
-plt.ylim([0.0, 1.05])
-plt.xlabel('False Positive Rate (1 - Specificity)', fontsize=12)
-plt.ylabel('True Positive Rate (Sensitivity)', fontsize=12)
-plt.title('ROC Curve - Best Model from Each Scenario', fontsize=14, fontweight='bold')
-plt.legend(loc="lower right", fontsize=10)
-plt.grid(True, alpha=0.3)
-plt.tight_layout()
-plt.savefig(f"{output_path}\\roc_curve_best_models.png", dpi=150, bbox_inches='tight')
-plt.show()
-print("✅ ROC Curve untuk model terbaik setiap skenario disimpan")
-
-# 4. ROC CURVE GABUNGAN SEMUA MODEL BASELINE
-plt.figure(figsize=(12, 8))
-
-baseline_results = [r for r in all_results if r['Skenario'] == 'Baseline']
-for idx, result in enumerate(baseline_results):
-    if result['y_prob'] is not None and result['ROC_AUC'] is not None:
-        color = colors[idx % len(colors)]
-        plt.plot(result['fpr'], result['tpr'], 
-                color=color, lw=2,
-                label=f"{result['Model']} (AUC = {result['ROC_AUC']:.3f})")
-
-plt.plot([0, 1], [0, 1], 'k--', lw=1.5, label='Random Classifier (AUC = 0.5)')
-plt.xlim([0.0, 1.0])
-plt.ylim([0.0, 1.05])
-plt.xlabel('False Positive Rate (1 - Specificity)', fontsize=12)
-plt.ylabel('True Positive Rate (Sensitivity)', fontsize=12)
-plt.title('ROC Curve - Baseline Scenario (All Models)', fontsize=14, fontweight='bold')
-plt.legend(loc="lower right", fontsize=10)
-plt.grid(True, alpha=0.3)
-plt.tight_layout()
-plt.savefig(f"{output_path}\\roc_curve_all_models_baseline.png", dpi=150, bbox_inches='tight')
-plt.show()
-print("✅ ROC Curve untuk semua model Baseline disimpan")
-
 # ============================================
-# MODEL TERBAIK (Berdasarkan Test Accuracy dengan Gap Kecil)
+# MODEL TERBAIK
 # ============================================
 
-# Filter model dengan gap < 8%
 good_models = [r for r in results_baseline + results_handling + results_tuning if r['Gap_Accuracy'] < 0.08]
 
 if good_models:
@@ -650,10 +733,8 @@ plt.show()
 # SIMPAN HASIL
 # ============================================
 
-# Simpan file CSV
 df_summary.to_csv(f"{output_path}\\evaluasi_binary_overfit.csv", index=False)
 
-# Simpan juga semua metrics lengkap ke file terpisah
 all_metrics = []
 for r in results_baseline + results_handling + results_tuning:
     all_metrics.append({
@@ -676,7 +757,12 @@ df_all_metrics = pd.DataFrame(all_metrics)
 df_all_metrics.to_csv(f"{output_path}\\evaluasi_binary_lengkap.csv", index=False)
 
 print(f"\n💾 Hasil disimpan di: {output_path}")
-print(f"   - evaluasi_binary_overfit.csv (ringkasan)")
-print(f"   - evaluasi_binary_lengkap.csv (lengkap dengan semua metrik)")
+print(f"   - data_10000_yang_digunakan.csv  ← FILE DATA YANG DIPAKAI")
+print(f"   - distribusi_sentimen.png")
+print(f"   - wordcloud.png")
+print(f"   - top_frequent_words.png")
+print(f"   - text_length_distribution.png")
+print(f"   - evaluasi_binary_overfit.csv")
+print(f"   - evaluasi_binary_lengkap.csv")
 print(f"   - roc_curve_*.png (berbagai file ROC Curve)")
-print("\n✨ SELESAI! (Binary Classification + Cek Overfitting + Semua ROC Curve)")
+print("\n✨ SELESAI! (EDA + Binary Classification + Cek Overfitting + Semua ROC Curve)")
