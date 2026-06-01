@@ -4,6 +4,7 @@
 # Skenario: Baseline, Handling Imbalance, Handling + Tuning
 # Metrik: Accuracy, Precision, Recall, Specificity, F1-Score, ROC Curve
 # PLUS: CEK OVERFITTING (Train vs Test Accuracy)
+# PLUS: CONFUSION MATRIX & HEATMAP TERSIMPAN
 # Data: 10000 sample (POSITIVE vs NEGATIVE ONLY)
 # ============================================
 
@@ -83,11 +84,11 @@ df = df[df['text_clean'].str.len() > 10]
 print(f"\n✅ Data siap: {len(df)} baris")
 
 # ============================================
-# 💾 SIMPAN DATA 10000 YANG DIGUNAKAN KE CSV
+# 💾 SIMPAN DATA YANG DIGUNAKAN KE CSV
 # ============================================
 
 print("\n" + "="*80)
-print("💾 MENYIMPAN DATA 10000 YANG DIGUNAKAN")
+print("💾 MENYIMPAN DATA YANG DIGUNAKAN")
 print("="*80)
 
 # Buat dataframe untuk disimpan
@@ -107,7 +108,7 @@ output_path = r"C:\Users\ASUS\OneDrive\Dokumen\DMBI UAS\output"
 os.makedirs(output_path, exist_ok=True)
 
 # Simpan ke CSV
-data_used_path = os.path.join(output_path, "data_10000_yang_digunakan.csv")
+data_used_path = os.path.join(output_path, "data_yang_digunakan.csv")
 data_used.to_csv(data_used_path, index=False, encoding='utf-8-sig')
 
 print(f"✅ Data berhasil disimpan di: {data_used_path}")
@@ -130,7 +131,7 @@ print(f"Panjang teks min  : {data_used['text_length'].min()} karakter")
 print(f"Panjang teks max  : {data_used['text_length'].max()} karakter")
 print(f"Panjang teks avg  : {data_used['text_length'].mean():.2f} karakter")
 
-print("\n✅ DATA 10000 BERHASIL DISIMPAN!")
+print("\n✅ DATA BERHASIL DISIMPAN!")
 print("="*80)
 
 # ============================================
@@ -676,9 +677,10 @@ ROC AUC                  : {best_result['ROC_AUC']:.4f}
 """)
 
 # ============================================
-# CONFUSION MATRIX
+# CONFUSION MATRIX (DENGAN PENYIMPANAN)
 # ============================================
 
+# Confusion Matrix untuk Model Terbaik
 plt.figure(figsize=(6, 5))
 sns.heatmap(best_result['Confusion_Matrix'], annot=True, fmt='d', cmap='Blues',
             xticklabels=class_names, yticklabels=class_names)
@@ -686,10 +688,154 @@ plt.title(f'Confusion Matrix - {best_result["Model"]} ({best_result["Skenario"]}
 plt.xlabel('Predicted')
 plt.ylabel('Actual')
 plt.tight_layout()
+plt.savefig(f"{output_path}\\confusion_matrix_best_model.png", dpi=150, bbox_inches='tight')
 plt.show()
+print(f"✅ Confusion Matrix tersimpan: confusion_matrix_best_model.png")
+
+# Confusion Matrix untuk semua model terbaik per skenario
+print("\n📊 Menyimpan Confusion Matrix untuk semua model terbaik...")
+
+best_per_scenario = {}
+for scenario in ['Baseline', 'Threshold', 'Threshold+Tuning']:
+    scenario_results = [r for r in all_results if scenario in r['Skenario']]
+    if scenario_results:
+        best = max(scenario_results, key=lambda x: x['Test_F1'])
+        best_per_scenario[scenario] = best
+
+fig, axes = plt.subplots(1, 3, figsize=(15, 5))
+for idx, (scenario, result) in enumerate(best_per_scenario.items()):
+    sns.heatmap(result['Confusion_Matrix'], annot=True, fmt='d', cmap='Blues',
+                xticklabels=class_names, yticklabels=class_names, ax=axes[idx])
+    axes[idx].set_title(f'{scenario}\n{result["Model"]} (F1: {result["Test_F1"]:.3f})')
+    axes[idx].set_xlabel('Predicted')
+    axes[idx].set_ylabel('Actual')
+
+plt.tight_layout()
+plt.savefig(f"{output_path}\\confusion_matrices_all_scenarios.png", dpi=150, bbox_inches='tight')
+plt.show()
+print(f"✅ Confusion Matrix semua skenario tersimpan: confusion_matrices_all_scenarios.png")
 
 # ============================================
-# VISUALISASI OVERFITTING GAP
+# HEATMAP OVERFITTING GAP (DENGAN PENYIMPANAN)
+# ============================================
+
+pivot_gap = df_summary.pivot(index='Model', columns='Skenario', values='Gap_Acc')
+plt.figure(figsize=(10, 6))
+sns.heatmap(pivot_gap, annot=True, fmt='.4f', cmap='RdYlGn_r', linewidths=0.5, 
+            vmin=0, vmax=0.15, cbar_kws={'label': 'Overfitting Gap (Train - Test)'})
+plt.title('Heatmap Overfitting Gap (Train - Test Accuracy)\nHijau = Aman, Merah = Overfitting', fontsize=12)
+plt.xlabel('Skenario', fontsize=11)
+plt.ylabel('Model', fontsize=11)
+plt.tight_layout()
+plt.savefig(f"{output_path}\\heatmap_overfitting_gap.png", dpi=150, bbox_inches='tight')
+plt.show()
+print(f"✅ Heatmap Overfitting Gap tersimpan: heatmap_overfitting_gap.png")
+
+# ============================================
+# HEATMAP AKURASI (TEST ACCURACY)
+# ============================================
+
+pivot_accuracy = df_summary.pivot(index='Model', columns='Skenario', values='Test_Acc')
+plt.figure(figsize=(10, 6))
+sns.heatmap(pivot_accuracy, annot=True, fmt='.4f', cmap='YlGnBu', linewidths=0.5,
+            vmin=0.6, vmax=1.0, cbar_kws={'label': 'Test Accuracy'})
+plt.title('Heatmap Test Accuracy per Model dan Skenario\nSemakin terang = Semakin baik', fontsize=12)
+plt.xlabel('Skenario', fontsize=11)
+plt.ylabel('Model', fontsize=11)
+plt.tight_layout()
+plt.savefig(f"{output_path}\\heatmap_test_accuracy.png", dpi=150, bbox_inches='tight')
+plt.show()
+print(f"✅ Heatmap Test Accuracy tersimpan: heatmap_test_accuracy.png")
+
+# ============================================
+# HEATMAP F1-SCORE
+# ============================================
+
+pivot_f1 = df_summary.pivot(index='Model', columns='Skenario', values='Test_F1')
+plt.figure(figsize=(10, 6))
+sns.heatmap(pivot_f1, annot=True, fmt='.4f', cmap='YlOrRd', linewidths=0.5,
+            vmin=0.6, vmax=1.0, cbar_kws={'label': 'Test F1-Score'})
+plt.title('Heatmap Test F1-Score per Model dan Skenario', fontsize=12)
+plt.xlabel('Skenario', fontsize=11)
+plt.ylabel('Model', fontsize=11)
+plt.tight_layout()
+plt.savefig(f"{output_path}\\heatmap_f1_score.png", dpi=150, bbox_inches='tight')
+plt.show()
+print(f"✅ Heatmap F1-Score tersimpan: heatmap_f1_score.png")
+
+# ============================================
+# HEATMAP ROC AUC
+# ============================================
+
+pivot_roc = df_summary.pivot(index='Model', columns='Skenario', values='ROC_AUC')
+plt.figure(figsize=(10, 6))
+sns.heatmap(pivot_roc, annot=True, fmt='.4f', cmap='Purples', linewidths=0.5,
+            vmin=0.5, vmax=1.0, cbar_kws={'label': 'ROC AUC'})
+plt.title('Heatmap ROC AUC per Model dan Skenario', fontsize=12)
+plt.xlabel('Skenario', fontsize=11)
+plt.ylabel('Model', fontsize=11)
+plt.tight_layout()
+plt.savefig(f"{output_path}\\heatmap_roc_auc.png", dpi=150, bbox_inches='tight')
+plt.show()
+print(f"✅ Heatmap ROC AUC tersimpan: heatmap_roc_auc.png")
+
+# ============================================
+# HEATMAP SPECIFICITY
+# ============================================
+
+specificity_data = []
+for r in all_results:
+    specificity_data.append({
+        'Model': r['Model'],
+        'Skenario': r['Skenario'],
+        'Specificity': r['Test_Specificity']
+    })
+df_specificity = pd.DataFrame(specificity_data)
+pivot_specificity = df_specificity.pivot(index='Model', columns='Skenario', values='Specificity')
+
+plt.figure(figsize=(10, 6))
+sns.heatmap(pivot_specificity, annot=True, fmt='.4f', cmap='Greens', linewidths=0.5,
+            vmin=0.5, vmax=1.0, cbar_kws={'label': 'Specificity'})
+plt.title('Heatmap Specificity per Model dan Skenario\nKemampuan mendeteksi Negative', fontsize=12)
+plt.xlabel('Skenario', fontsize=11)
+plt.ylabel('Model', fontsize=11)
+plt.tight_layout()
+plt.savefig(f"{output_path}\\heatmap_specificity.png", dpi=150, bbox_inches='tight')
+plt.show()
+print(f"✅ Heatmap Specificity tersimpan: heatmap_specificity.png")
+
+# ============================================
+# SIMPAN SEMUA CONFUSION MATRIX KE FILE (TEXT)
+# ============================================
+
+with open(f"{output_path}\\all_confusion_matrices.txt", 'w', encoding='utf-8') as f:
+    f.write("="*80 + "\n")
+    f.write("SEMUA CONFUSION MATRIX (5 MODEL × 3 SKENARIO)\n")
+    f.write("="*80 + "\n\n")
+    
+    for r in all_results:
+        f.write(f"\n{'='*60}\n")
+        f.write(f"Model    : {r['Model']}\n")
+        f.write(f"Skenario : {r['Skenario']}\n")
+        f.write(f"{'='*60}\n")
+        f.write(f"Confusion Matrix:\n")
+        f.write(f"                 Predicted\n")
+        f.write(f"                 Positive  Negative\n")
+        cm = r['Confusion_Matrix']
+        f.write(f"Actual Positive   {cm[1,1]:6d}   {cm[1,0]:6d}\n")
+        f.write(f"       Negative   {cm[0,1]:6d}   {cm[0,0]:6d}\n")
+        f.write(f"\nMetrik:\n")
+        f.write(f"  Accuracy  : {r['Test_Accuracy']:.4f}\n")
+        f.write(f"  Precision : {r['Test_Precision']:.4f}\n")
+        f.write(f"  Recall    : {r['Test_Recall']:.4f}\n")
+        f.write(f"  Specificity: {r['Test_Specificity']:.4f}\n")
+        f.write(f"  F1-Score  : {r['Test_F1']:.4f}\n")
+        f.write(f"  ROC AUC   : {r['ROC_AUC']:.4f}\n")
+
+print(f"✅ Semua confusion matrix disimpan di: all_confusion_matrices.txt")
+
+# ============================================
+# VISUALISASI OVERFITTING GAP (BAR CHART)
 # ============================================
 
 fig, ax = plt.subplots(figsize=(14, 6))
@@ -713,24 +859,12 @@ ax.set_ylim(0, 1)
 ax.grid(True, alpha=0.3)
 
 plt.tight_layout()
+plt.savefig(f"{output_path}\\overfitting_comparison.png", dpi=150, bbox_inches='tight')
 plt.show()
+print(f"✅ Overfitting comparison chart tersimpan: overfitting_comparison.png")
 
 # ============================================
-# HEATMAP OVERFITTING GAP
-# ============================================
-
-pivot_gap = df_summary.pivot(index='Model', columns='Skenario', values='Gap_Acc')
-plt.figure(figsize=(10, 6))
-sns.heatmap(pivot_gap, annot=True, fmt='.4f', cmap='RdYlGn_r', linewidths=0.5, 
-            vmin=0, vmax=0.15)
-plt.title('Heatmap Overfitting Gap (Train - Test Accuracy)\nHijau = Aman, Merah = Overfitting')
-plt.xlabel('Skenario')
-plt.ylabel('Model')
-plt.tight_layout()
-plt.show()
-
-# ============================================
-# SIMPAN HASIL
+# SIMPAN HASIL (LENGKAP DENGAN FILE TAMBAHAN)
 # ============================================
 
 df_summary.to_csv(f"{output_path}\\evaluasi_binary_overfit.csv", index=False)
@@ -756,13 +890,39 @@ for r in results_baseline + results_handling + results_tuning:
 df_all_metrics = pd.DataFrame(all_metrics)
 df_all_metrics.to_csv(f"{output_path}\\evaluasi_binary_lengkap.csv", index=False)
 
-print(f"\n💾 Hasil disimpan di: {output_path}")
-print(f"   - data_10000_yang_digunakan.csv  ← FILE DATA YANG DIPAKAI")
+print("\n" + "="*80)
+print("💾 SEMUA HASIL TERSIMPAN!")
+print("="*80)
+print(f"\n📁 Lokasi: {output_path}")
+print("\n📁 FILE CSV:")
+print(f"   - data_yang_digunakan.csv")
+print(f"   - evaluasi_binary_overfit.csv")
+print(f"   - evaluasi_binary_lengkap.csv")
+print(f"   - all_confusion_matrices.txt")
+print("\n📁 FILE GAMBAR - EDA:")
 print(f"   - distribusi_sentimen.png")
 print(f"   - wordcloud.png")
 print(f"   - top_frequent_words.png")
 print(f"   - text_length_distribution.png")
-print(f"   - evaluasi_binary_overfit.csv")
-print(f"   - evaluasi_binary_lengkap.csv")
-print(f"   - roc_curve_*.png (berbagai file ROC Curve)")
-print("\n✨ SELESAI! (EDA + Binary Classification + Cek Overfitting + Semua ROC Curve)")
+print("\n📁 FILE GAMBAR - CONFUSION MATRIX:")
+print(f"   - confusion_matrix_best_model.png")
+print(f"   - confusion_matrices_all_scenarios.png")
+print("\n📁 FILE GAMBAR - HEATMAPS:")
+print(f"   - heatmap_overfitting_gap.png")
+print(f"   - heatmap_test_accuracy.png")
+print(f"   - heatmap_f1_score.png")
+print(f"   - heatmap_roc_auc.png")
+print(f"   - heatmap_specificity.png")
+print("\n📁 FILE GAMBAR - ROC CURVE:")
+print(f"   - roc_curve_Baseline.png")
+print(f"   - roc_curve_Threshold.png")
+print(f"   - roc_curve_Threshold+Tuning.png")
+print(f"   - roc_curve_Logistic_Regression.png")
+print(f"   - roc_curve_Naive_Bayes.png")
+print(f"   - roc_curve_SVM.png")
+print(f"   - roc_curve_Random_Forest.png")
+print(f"   - roc_curve_KNN.png")
+print("\n📁 FILE GAMBAR - LAINNYA:")
+print(f"   - overfitting_comparison.png")
+
+print("\n✨ SELESAI! (EDA + Binary Classification + Cek Overfitting + Semua ROC Curve + Confusion Matrix + Heatmaps)")

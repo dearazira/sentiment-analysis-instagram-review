@@ -1,0 +1,274 @@
+================================================================================
+SEMUA CONFUSION MATRIX (5 MODEL × 3 SKENARIO)
+================================================================================
+
+
+============================================================
+Model    : Logistic Regression
+Skenario : Baseline
+============================================================
+Confusion Matrix:
+                 Predicted
+                 Positive  Negative
+Actual Positive      711       93
+       Negative       82      375
+
+Metrik:
+  Accuracy  : 0.8612
+  Precision : 0.8966
+  Recall    : 0.8843
+  Specificity: 0.8206
+  F1-Score  : 0.8904
+  ROC AUC   : 0.9267
+
+============================================================
+Model    : Naive Bayes
+Skenario : Baseline
+============================================================
+Confusion Matrix:
+                 Predicted
+                 Positive  Negative
+Actual Positive      692      112
+       Negative       55      402
+
+Metrik:
+  Accuracy  : 0.8676
+  Precision : 0.9264
+  Recall    : 0.8607
+  Specificity: 0.8796
+  F1-Score  : 0.8923
+  ROC AUC   : 0.9242
+
+============================================================
+Model    : SVM
+Skenario : Baseline
+============================================================
+Confusion Matrix:
+                 Predicted
+                 Positive  Negative
+Actual Positive      699      105
+       Negative       63      394
+
+Metrik:
+  Accuracy  : 0.8668
+  Precision : 0.9173
+  Recall    : 0.8694
+  Specificity: 0.8621
+  F1-Score  : 0.8927
+  ROC AUC   : 0.9194
+
+============================================================
+Model    : Random Forest
+Skenario : Baseline
+============================================================
+Confusion Matrix:
+                 Predicted
+                 Positive  Negative
+Actual Positive      672      132
+       Negative       67      390
+
+Metrik:
+  Accuracy  : 0.8422
+  Precision : 0.9093
+  Recall    : 0.8358
+  Specificity: 0.8534
+  F1-Score  : 0.8710
+  ROC AUC   : 0.9170
+
+============================================================
+Model    : KNN
+Skenario : Baseline
+============================================================
+Confusion Matrix:
+                 Predicted
+                 Positive  Negative
+Actual Positive      777       27
+       Negative      371       86
+
+Metrik:
+  Accuracy  : 0.6844
+  Precision : 0.6768
+  Recall    : 0.9664
+  Specificity: 0.1882
+  F1-Score  : 0.7961
+  ROC AUC   : 0.6814
+
+============================================================
+Model    : Logistic Regression
+Skenario : Threshold (th=0.55)
+============================================================
+Confusion Matrix:
+                 Predicted
+                 Positive  Negative
+Actual Positive      699      105
+       Negative       54      403
+
+Metrik:
+  Accuracy  : 0.8739
+  Precision : 0.9283
+  Recall    : 0.8694
+  Specificity: 0.8818
+  F1-Score  : 0.8979
+  ROC AUC   : 0.9267
+
+============================================================
+Model    : Naive Bayes
+Skenario : Threshold (th=0.45)
+============================================================
+Confusion Matrix:
+                 Predicted
+                 Positive  Negative
+Actual Positive      703      101
+       Negative       62      395
+
+Metrik:
+  Accuracy  : 0.8707
+  Precision : 0.9190
+  Recall    : 0.8744
+  Specificity: 0.8643
+  F1-Score  : 0.8961
+  ROC AUC   : 0.9242
+
+============================================================
+Model    : SVM
+Skenario : Threshold (th=0.50)
+============================================================
+Confusion Matrix:
+                 Predicted
+                 Positive  Negative
+Actual Positive      710       94
+       Negative       77      380
+
+Metrik:
+  Accuracy  : 0.8644
+  Precision : 0.9022
+  Recall    : 0.8831
+  Specificity: 0.8315
+  F1-Score  : 0.8925
+  ROC AUC   : 0.9194
+
+============================================================
+Model    : Random Forest
+Skenario : Threshold (th=0.40)
+============================================================
+Confusion Matrix:
+                 Predicted
+                 Positive  Negative
+Actual Positive      717       87
+       Negative      110      347
+
+Metrik:
+  Accuracy  : 0.8438
+  Precision : 0.8670
+  Recall    : 0.8918
+  Specificity: 0.7593
+  F1-Score  : 0.8792
+  ROC AUC   : 0.9170
+
+============================================================
+Model    : KNN
+Skenario : Threshold (th=0.65)
+============================================================
+Confusion Matrix:
+                 Predicted
+                 Positive  Negative
+Actual Positive      750       54
+       Negative      314      143
+
+Metrik:
+  Accuracy  : 0.7082
+  Precision : 0.7049
+  Recall    : 0.9328
+  Specificity: 0.3129
+  F1-Score  : 0.8030
+  ROC AUC   : 0.6814
+
+============================================================
+Model    : Logistic Regression
+Skenario : Threshold+Tuning (th=0.60)
+============================================================
+Confusion Matrix:
+                 Predicted
+                 Positive  Negative
+Actual Positive      686      118
+       Negative       47      410
+
+Metrik:
+  Accuracy  : 0.8692
+  Precision : 0.9359
+  Recall    : 0.8532
+  Specificity: 0.8972
+  F1-Score  : 0.8926
+  ROC AUC   : 0.9169
+
+============================================================
+Model    : Naive Bayes
+Skenario : Threshold+Tuning (th=0.45)
+============================================================
+Confusion Matrix:
+                 Predicted
+                 Positive  Negative
+Actual Positive      693      111
+       Negative       58      399
+
+Metrik:
+  Accuracy  : 0.8660
+  Precision : 0.9228
+  Recall    : 0.8619
+  Specificity: 0.8731
+  F1-Score  : 0.8913
+  ROC AUC   : 0.9221
+
+============================================================
+Model    : SVM
+Skenario : Threshold+Tuning (th=0.60)
+============================================================
+Confusion Matrix:
+                 Predicted
+                 Positive  Negative
+Actual Positive      694      110
+       Negative       55      402
+
+Metrik:
+  Accuracy  : 0.8692
+  Precision : 0.9266
+  Recall    : 0.8632
+  Specificity: 0.8796
+  F1-Score  : 0.8938
+  ROC AUC   : 0.9219
+
+============================================================
+Model    : Random Forest
+Skenario : Threshold+Tuning (th=0.40)
+============================================================
+Confusion Matrix:
+                 Predicted
+                 Positive  Negative
+Actual Positive      713       91
+       Negative      113      344
+
+Metrik:
+  Accuracy  : 0.8382
+  Precision : 0.8632
+  Recall    : 0.8868
+  Specificity: 0.7527
+  F1-Score  : 0.8748
+  ROC AUC   : 0.9141
+
+============================================================
+Model    : KNN
+Skenario : Threshold+Tuning (th=0.35)
+============================================================
+Confusion Matrix:
+                 Predicted
+                 Positive  Negative
+Actual Positive      767       37
+       Negative      340      117
+
+Metrik:
+  Accuracy  : 0.7010
+  Precision : 0.6929
+  Recall    : 0.9540
+  Specificity: 0.2560
+  F1-Score  : 0.8027
+  ROC AUC   : 0.6647
